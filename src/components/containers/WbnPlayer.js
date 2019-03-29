@@ -35,33 +35,73 @@ const WbnPlayer = props => {
     autoplay: false
   });
 
-  useEffect(
-    () => {
-      const videoId = props.match.params.activeVideo;
-      if (videoId !== undefined) {
-        const newActiveVideo = state.videos.findIndex(
-          video => video.id === videoId
-        );
-        setState({
-          ...state,
-          activeVideo: state.videos[newActiveVideo],
-          autoplay: props.location.autoplay,
-        })
-      } else {
-        props.history.push({
-          pathname: `/${state.activeVideo.id}`,
-          autoplay: false
-        })
-      }
-    },
-    [props.match.params.activeVideo]
-  )
+  useEffect(() => {
+    const videoId = props.match.params.activeVideo;
+    if (videoId !== undefined) {
+      const newActiveVideo = state.videos.findIndex(
+        video => video.id === videoId
+      );
+      setState({
+        ...state,
+        activeVideo: state.videos[newActiveVideo],
+        autoplay: props.location.autoplay
+      });
+    } else {
+      props.history.push({
+        pathname: `/${state.activeVideo.id}`,
+        autoplay: false
+      });
+    }
+  }, [props.match.params.activeVideo]);
 
-  const nightModeCallback = () => { };
+  // Set up toggle for switching to nightmode
+  const nightModeCallback = () => {
+    setState(prevState => ({
+      ...prevState,
+      nightMode: !prevState.nightMode
+    }));
+  };
 
-  const endCallback = () => { };
+  // What to do when the video has ended
+  const endCallback = () => {
+    const videoId = props.match.params.activeVideo;
+    const currentVideoIndex = state.videos.findIndex(
+      video => video.id === videoId
+    );
 
-  const progressCallback = () => { };
+    const nextVideo =
+      currentVideoIndex === state.videos.length - 1 ? 0 : currentVideoIndex + 1;
+
+    props.history.push({
+      pathname: `${state.videos[nextVideo].id}`,
+      autoplay: false
+    });
+  };
+
+  // Check to see if the video has played for 10 seconds
+  const progressCallback = e => {
+    if (e.playedSeconds > 10 && e.playedSeconds < 11) {
+      const videos = [...state.videos];
+      const playedVideo = videos.find(
+        video => video.id === state.activeVideo.id
+      );
+      playedVideo.played = true;
+
+      setState(prevState => ({
+        ...prevState,
+        videos
+      }));
+
+      // setState({
+      //   ...state,
+      //   videos: state.videos.map(element => {
+      //     return element.id === state.activeVideo.id
+      //       ? { ...element, played: true }
+      //       : element;
+      //   })
+      // });
+    }
+  };
 
   return (
     <ThemeProvider theme={state.nightMode ? theme : themeLight}>
